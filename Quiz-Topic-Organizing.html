@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timed Google Form Test</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Apply smooth scrolling and use Inter font */
+        html {
+            scroll-behavior: smooth;
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom height for the form container */
+        #form-container {
+            height: 80vh; /* Adjust height as needed */
+            position: relative;
+        }
+        /* Ensure the iframe fills its container */
+        #google-form {
+            width: 100%;
+            height: 100%;
+        }
+        /* Style for the overlay when time is up */
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 0, 0, 0.9); /* Red overlay */
+            color: white;
+            display: none; /* Hidden by default */
+            place-items: center;
+            font-size: 2rem;
+            font-weight: bold;
+            z-index: 100;
+            text-align: center;
+            border-radius: 0.5rem;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+            cursor: not-allowed;
+            padding: 2rem;
+        }
+
+        .fade-in {
+            opacity: 1 !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto">
+        <header class="text-center mb-6">
+            <h1 class="text-4xl font-extrabold text-indigo-700 mb-2">Timed Test Center</h1>
+            <p class="text-gray-600">The timer below is strictly enforced. Please ensure you submit your form before time runs out!</p>
+        </header>
+
+        <!-- Timer Display Card -->
+        <div class="bg-white p-4 md:p-6 rounded-xl shadow-lg mb-6 border-b-4 border-indigo-500 flex justify-between items-center flex-wrap">
+            <div class="text-lg font-semibold text-gray-700">Time Remaining:</div>
+            <div id="timer" class="text-4xl md:text-5xl font-mono text-red-600 bg-red-50 py-2 px-4 rounded-lg shadow-inner min-w-[150px] text-center transition duration-500 ease-in-out">
+                15:00
+            </div>
+        </div>
+
+        <!-- Google Form Embed Container -->
+        <div id="form-container" class="bg-white rounded-xl shadow-2xl p-2 md:p-4 overflow-hidden border-2 border-gray-300">
+            <!-- Overlay element (Time Up Message) -->
+            <div id="overlay">
+                <div class="flex flex-col items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-16 h-16 mb-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.948 3.376c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                    </svg>
+                    <span class="block text-4xl">TIME IS UP!</span>
+                    <span class="block text-xl mt-2 font-normal">Your time for this test has expired.</span>
+                    <span class="block text-xl mt-1 font-normal">Please scroll down the form and submit immediately.</span>
+                </div>
+            </div>
+
+            <!-- 
+                !!!! IMPORTANT !!!!
+                1. Find the EMBED code for your Google Form.
+                2. Copy the URL from the 'src' attribute of the iframe code.
+                3. Replace the 'https://docs.google.com/forms/d/e/2PACX-1vQ.../viewform?embedded=true' placeholder below with YOUR Form's embed URL.
+                
+                The form below is just a placeholder.
+            -->
+            <<iframe src="https://docs.google.com/forms/d/e/1FAIpQLSf_c4gfcZK4hMUkvHqcChcV2ZWXEqAM4K8exDKTO0eEAJgNXg/viewform?embedded=true" width="700" height="520" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>>
+        </div>
+
+        <footer class="text-center text-sm text-gray-500 mt-6">
+            <p>Ensure your form is submitted before the overlay appears.</p>
+        </footer>
+    </div>
+
+    <script>
+        // --- Timer Configuration ---
+        const DURATION_SECONDS = 1800; // 30 minutes (15 * 60)
+        // ---------------------------
+
+        let timeLeft = DURATION_SECONDS;
+        let timerInterval;
+
+        const timerDisplay = document.getElementById('timer');
+        const formContainer = document.getElementById('form-container');
+        const overlay = document.getElementById('overlay');
+
+        // Function to format seconds into MM:SS
+        function formatTime(totalSeconds) {
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        // Function to update the timer display
+        function updateTimerDisplay() {
+            timerDisplay.textContent = formatTime(timeLeft);
+            
+            // Highlight timer when running low
+            if (timeLeft <= 60 && timeLeft > 0) { // 60 seconds left
+                timerDisplay.classList.add('text-yellow-500', 'bg-yellow-50');
+                timerDisplay.classList.remove('text-red-600', 'bg-red-50');
+            } else if (timeLeft <= 300 && timeLeft > 60) { // 5 minutes left
+                // Subtle warning
+                timerDisplay.classList.add('text-orange-500');
+            }
+        }
+
+        // Function to handle time expiration
+        function timeUp() {
+            clearInterval(timerInterval);
+            timerDisplay.textContent = "00:00";
+            timerDisplay.classList.remove('text-yellow-500', 'bg-yellow-50', 'text-red-600', 'bg-red-50');
+            timerDisplay.classList.add('text-gray-800', 'bg-red-200');
+
+            // 1. Show the overlay
+            overlay.style.display = 'grid';
+            
+            // 2. Add the fade-in effect slightly after the display is set to 'grid'
+            setTimeout(() => {
+                overlay.classList.add('fade-in');
+            }, 50);
+
+            // 3. Optional: Trigger a final warning notification
+            console.warn("Time has expired! Form is locked.");
+        }
+
+        // Main function to start the timer
+        function startTimer() {
+            updateTimerDisplay(); // Initial display
+
+            timerInterval = setInterval(() => {
+                if (timeLeft > 0) {
+                    timeLeft--;
+                    updateTimerDisplay();
+                } else {
+                    timeUp();
+                }
+            }, 1000); // Update every 1 second
+        }
+
+        // Start the timer when the page loads
+        window.onload = startTimer;
+
+    </script>
+</body>
+</html>
